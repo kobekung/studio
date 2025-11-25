@@ -28,6 +28,16 @@ export async function getWidgetDefaults(widgetType: SuggestWidgetDefaultsInput['
         }]
       };
     }
+    if (widgetType === 'ticker') {
+        return {
+            text: 'This is a sample scrolling text. Change it in the properties panel!',
+            direction: 'left',
+            speed: 50,
+            textColor: '#000000',
+            backgroundColor: '#FFFFFF',
+            fontSize: 48,
+        }
+    }
     return {};
   }
 }

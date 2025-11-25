@@ -1,4 +1,4 @@
-export type WidgetType = 'text' | 'clock' | 'image' | 'video';
+export type WidgetType = 'text' | 'clock' | 'image' | 'video' | 'ticker';
 
 export interface PlaylistItem {
   id: string;
@@ -24,7 +24,16 @@ export interface ClockWidgetProperties {
   fontSize: number;
 }
 
-export type WidgetProperties = TextWidgetProperties | ImageWidgetProperties | ClockWidgetProperties;
+export interface TickerWidgetProperties {
+  text: string;
+  direction: 'left' | 'right' | 'up' | 'down';
+  speed: number; // pixels per second
+  textColor: string;
+  backgroundColor: string;
+  fontSize: number;
+}
+
+export type WidgetProperties = TextWidgetProperties | ImageWidgetProperties | ClockWidgetProperties | TickerWidgetProperties;
 
 export interface Widget<T extends WidgetProperties = WidgetProperties> {
   id: string;

@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, Plus, Tv, Clock, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Eye, Plus, Tv, Clock, Image as ImageIcon, Loader2, Newspaper } from 'lucide-react';
 import { WidgetType } from '@/lib/types';
 
 export default function Header() {
@@ -46,6 +46,10 @@ export default function Header() {
             <DropdownMenuItem onClick={() => handleAddWidget('image')}>
               <ImageIcon />
               <span>Image</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAddWidget('ticker')}>
+              <Newspaper />
+              <span>Ticker</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -4,6 +4,7 @@ import CommonProperties from './CommonProperties';
 import TextProperties from './TextProperties';
 import ImageProperties from './ImageProperties';
 import ClockProperties from './ClockProperties';
+import TickerProperties from './TickerProperties';
 import { Separator } from '../ui/separator';
 
 interface PropertiesPanelProps {
@@ -19,6 +20,8 @@ export default function PropertiesPanel({ widget }: PropertiesPanelProps) {
         return <ImageProperties widget={widget} />;
       case 'clock':
         return <ClockProperties widget={widget} />;
+      case 'ticker':
+        return <TickerProperties widget={widget} />;
       default:
         return null;
     }

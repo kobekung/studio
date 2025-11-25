@@ -118,7 +118,7 @@ export const useEditor = () => {
         x: 100,
         y: 100,
         width: 400,
-        height: 200,
+        height: (type === 'ticker') ? 100 : 200,
         zIndex: (state.layout?.widgets.length || 0) + 1,
         properties: { ...properties },
       };
@@ -131,6 +131,19 @@ export const useEditor = () => {
           type: 'image',
           duration: 10
         }];
+      }
+
+      if (type === 'ticker') {
+        if (!newWidget.properties.text) {
+            newWidget.properties = {
+                text: 'This is a sample scrolling text. Change it in the properties panel!',
+                direction: 'left',
+                speed: 50,
+                textColor: '#000000',
+                backgroundColor: '#FFFFFF',
+                fontSize: 48,
+            }
+        }
       }
 
       dispatch({ type: 'ADD_WIDGET', payload: newWidget });

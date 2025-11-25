@@ -4,6 +4,7 @@ import { Widget } from '@/lib/types';
 import TextWidget from './TextWidget';
 import ClockWidget from './ClockWidget';
 import MediaPlaylistWidget from './ImageWidget';
+import TickerWidget from './TickerWidget';
 
 interface WidgetRendererProps {
   widget: Widget<any>;
@@ -18,6 +19,8 @@ export default function WidgetRenderer({ widget }: WidgetRendererProps) {
     case 'image':
     case 'video':
       return <MediaPlaylistWidget properties={widget.properties} />;
+    case 'ticker':
+      return <TickerWidget properties={widget.properties} />;
     default:
       return (
         <div className="w-full h-full bg-red-200 flex items-center justify-center">
