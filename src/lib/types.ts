@@ -15,6 +15,7 @@ export interface TextWidgetProperties {
 
 export interface ImageWidgetProperties {
   playlist: PlaylistItem[];
+  fitMode: 'cover' | 'contain' | 'fill';
 }
 
 export interface ClockWidgetProperties {

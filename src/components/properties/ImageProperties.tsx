@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2, Plus, Upload } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { useRef } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface ImagePropertiesProps {
   widget: Widget<ImageWidgetProperties>;
@@ -17,18 +18,22 @@ export default function ImageProperties({ widget }: ImagePropertiesProps) {
   const { playlist } = widget.properties;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const debouncedDispatch = useDebouncedCallback((newPlaylist: PlaylistItem[]) => {
+  const debouncedUpdate = useDebouncedCallback((newProps: Partial<ImageWidgetProperties>) => {
     updateWidgetProperties({
       id: widget.id,
-      properties: { ...widget.properties, playlist: newPlaylist },
+      properties: { ...widget.properties, ...newProps },
     });
   }, 300);
 
-  const updatePlaylist = (newPlaylist: PlaylistItem[]) => {
+  const updateProperties = (newProps: Partial<ImageWidgetProperties>) => {
     // Optimistic UI update
-    widget.properties.playlist = newPlaylist;
+    Object.assign(widget.properties, newProps);
     // Debounced state update
-    debouncedDispatch(newPlaylist);
+    debouncedUpdate(newProps);
+  };
+  
+  const updatePlaylist = (newPlaylist: PlaylistItem[]) => {
+    updateProperties({ playlist: newPlaylist });
   };
 
   const handleItemChange = (itemId: string, field: 'url' | 'duration', value: string | number) => {
@@ -114,6 +119,23 @@ export default function ImageProperties({ widget }: ImagePropertiesProps) {
 
   return (
     <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Fit Mode</Label>
+         <Select
+          value={widget.properties.fitMode || 'fill'}
+          onValueChange={(value: 'cover' | 'contain' | 'fill') => updateProperties({ fitMode: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select fit mode" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="fill">Fill (Stretch)</SelectItem>
+            <SelectItem value="cover">Cover (No Distortion)</SelectItem>
+            <SelectItem value="contain">Contain (Fit Inside)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="flex justify-between items-center">
         <h4 className="font-medium text-md">Playlist Manager</h4>
         <div className="flex gap-2">

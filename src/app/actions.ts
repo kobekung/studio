@@ -20,6 +20,7 @@ export async function getWidgetDefaults(widgetType: SuggestWidgetDefaultsInput['
     if (widgetType === 'image') {
       const defaultImage = PlaceHolderImages.find(img => img.id === 'default-image-widget');
       return { 
+        fitMode: 'fill',
         playlist: [{
           id: `media-${Date.now()}`,
           url: defaultImage?.imageUrl || 'https://picsum.photos/seed/10/400/300',

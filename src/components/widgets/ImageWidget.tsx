@@ -1,6 +1,6 @@
 'use client';
 import Image from 'next/image';
-import { ImageWidgetProperties, PlaylistItem } from '@/lib/types';
+import { ImageWidgetProperties } from '@/lib/types';
 import { useState, useEffect } from 'react';
 
 interface MediaPlaylistWidgetProps {
@@ -8,7 +8,7 @@ interface MediaPlaylistWidgetProps {
 }
 
 export default function MediaPlaylistWidget({ properties }: MediaPlaylistWidgetProps) {
-  const { playlist } = properties;
+  const { playlist, fitMode = 'fill' } = properties;
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -36,12 +36,12 @@ export default function MediaPlaylistWidget({ properties }: MediaPlaylistWidgetP
   
   if (currentItem.type === 'image') {
     return (
-      <div className="w-full h-full relative bg-muted">
+      <div className="w-full h-full relative bg-muted overflow-hidden">
         <Image
           src={currentItem.url}
           alt={`Playlist image ${currentIndex + 1}`}
           fill
-          style={{ objectFit: 'cover' }}
+          style={{ objectFit: fitMode }}
         />
       </div>
     );
@@ -49,14 +49,15 @@ export default function MediaPlaylistWidget({ properties }: MediaPlaylistWidgetP
 
   if (currentItem.type === 'video') {
     return (
-      <div className="w-full h-full relative bg-black">
+      <div className="w-full h-full relative bg-black overflow-hidden">
         <video
           key={currentItem.id}
           src={currentItem.url}
           autoPlay
           muted
           loop={playlist.length === 1}
-          className="w-full h-full object-cover"
+          className="w-full h-full"
+          style={{ objectFit: fitMode }}
         />
       </div>
     );

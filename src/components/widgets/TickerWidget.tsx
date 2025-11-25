@@ -30,8 +30,14 @@ export default function TickerWidget({ properties }: TickerWidgetProps) {
         vertical={isVertical}
         className="w-full h-full"
       >
-        <div style={{ whiteSpace: isVertical ? 'normal' : 'nowrap', padding: isVertical ? '0 20px' : '0' }}>
-            {text}&nbsp;
+        <div style={{ 
+            whiteSpace: isVertical ? 'pre-wrap' : 'nowrap',
+            wordBreak: isVertical ? 'break-word' : 'normal', 
+            padding: isVertical ? '0 10px' : '0',
+            width: isVertical ? '100%' : 'auto',
+            display: 'inline-block'
+          }}>
+            {text}{!isVertical && '\u00A0\u00A0\u00A0\u00A0'}
         </div>
       </Marquee>
     </div>

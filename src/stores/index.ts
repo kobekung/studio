@@ -64,7 +64,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       layout: {
         ...state.layout,
         widgets: state.layout.widgets.map((widget) =>
-          widget.id === payload.id ? { ...widget, ...payload } : widget
+          widget.id === payload.id ? { ...widget, properties: payload.properties } : widget
         ),
       },
     };
@@ -97,14 +97,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         properties: { ...properties },
       };
 
-      if (type === 'image' && !newWidget.properties.playlist) {
-        const defaultImage = PlaceHolderImages.find(img => img.id === 'default-image-widget');
-        newWidget.properties.playlist = [{
-          id: `media-${Date.now()}`,
-          url: defaultImage?.imageUrl || 'https://picsum.photos/seed/10/400/300',
-          type: 'image',
-          duration: 10
-        }];
+      if (type === 'image') {
+        newWidget.properties.fitMode = 'fill';
+        if (!newWidget.properties.playlist) {
+            const defaultImage = PlaceHolderImages.find(img => img.id === 'default-image-widget');
+            newWidget.properties.playlist = [{
+                id: `media-${Date.now()}`,
+                url: defaultImage?.imageUrl || 'https://picsum.photos/seed/10/400/300',
+                type: 'image',
+                duration: 10
+            }];
+        }
       }
 
       if (type === 'ticker') {
