@@ -10,22 +10,27 @@ export default function Canvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
-  const resizeCanvas = () => {
-    if (containerRef.current && layout) {
-      const { width: containerWidth, height: containerHeight } = containerRef.current.getBoundingClientRect();
-      const scaleX = containerWidth / layout.width;
-      const scaleY = containerHeight / layout.height;
-      setScale(Math.min(scaleX, scaleY) * 0.9); // 90% of the available space
-    }
-  };
-
   useEffect(() => {
+    const resizeCanvas = () => {
+      if (containerRef.current && layout) {
+        const { width: containerWidth, height: containerHeight } = containerRef.current.getBoundingClientRect();
+        if (layout.width > 0 && layout.height > 0) {
+            const scaleX = containerWidth / layout.width;
+            const scaleY = containerHeight / layout.height;
+            setScale(Math.min(scaleX, scaleY) * 0.9); // Use 90% of available space
+        }
+      }
+    };
+    
+    // Run on mount and when layout changes
     resizeCanvas();
+    
+    // Add event listener for window resize
     window.addEventListener('resize', resizeCanvas);
+    
+    // Cleanup
     return () => window.removeEventListener('resize', resizeCanvas);
   }, [layout]);
-  
-  useEffect(resizeCanvas, []);
 
 
   if (!layout) {
@@ -33,20 +38,20 @@ export default function Canvas() {
   }
 
   const handleDragStop = (id: string, d: any) => {
-    updateWidgetPosition({ id, x: d.x / scale, y: d.y / scale });
+    updateWidgetPosition({ id, x: d.x, y: d.y });
   };
 
   const handleResizeStop = (id: string, ref: any, position: any) => {
     updateWidgetSize({
       id,
-      width: ref.offsetWidth / scale,
-      height: ref.offsetHeight / scale,
+      width: ref.offsetWidth,
+      height: ref.offsetHeight,
     });
-    updateWidgetPosition({ id, x: position.x / scale, y: position.y / scale });
+    updateWidgetPosition({ id, x: position.x, y: position.y });
   };
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-auto">
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center p-4">
         <div
           id="canvas"
           className="relative shadow-lg bg-background"
@@ -68,14 +73,9 @@ export default function Canvas() {
               key={widget.id}
               size={{ width: widget.width, height: widget.height }}
               position={{ x: widget.x, y: widget.y }}
-              onDragStop={(_e, d) => updateWidgetPosition({ id: widget.id, x: d.x, y: d.y })}
+              onDragStop={(_e, d) => handleDragStop(widget.id, d)}
               onResizeStop={(_e, _direction, ref, _delta, position) => {
-                updateWidgetSize({
-                    id: widget.id,
-                    width: ref.offsetWidth,
-                    height: ref.offsetHeight,
-                });
-                updateWidgetPosition({ id: widget.id, x: position.x, y: position.y });
+                handleResizeStop(widget.id, ref, position)
               }}
               bounds="parent"
               className={cn(
@@ -86,6 +86,7 @@ export default function Canvas() {
                 e.stopPropagation();
                 selectWidget(widget.id);
               }}
+              scale={scale}
             >
               <div className="w-full h-full overflow-hidden relative">
                 <WidgetRenderer widget={widget} />
