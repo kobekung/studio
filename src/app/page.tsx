@@ -1,3 +1,10 @@
+import { EditorProvider } from '@/context/EditorContext';
+import EditorLayout from '@/components/editor/EditorLayout';
+
 export default function Home() {
-  return <></>;
+  return (
+    <EditorProvider>
+      <EditorLayout />
+    </EditorProvider>
+  );
 }
