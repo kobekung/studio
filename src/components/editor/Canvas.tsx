@@ -7,32 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 
 export default function Canvas() {
   const { layout, selectedWidgetId, selectWidget, updateWidgetPosition, updateWidgetSize } = useEditorStore();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    const resizeCanvas = () => {
-      if (containerRef.current && layout) {
-        const { width: containerWidth, height: containerHeight } = containerRef.current.getBoundingClientRect();
-        if (layout.width > 0 && layout.height > 0) {
-            const scaleX = containerWidth / layout.width;
-            const scaleY = containerHeight / layout.height;
-            setScale(Math.min(scaleX, scaleY) * 0.9); // Use 90% of available space
-        }
-      }
-    };
-    
-    // Run on mount and when layout changes
-    resizeCanvas();
-    
-    // Add event listener for window resize
-    window.addEventListener('resize', resizeCanvas);
-    
-    // Cleanup
-    return () => window.removeEventListener('resize', resizeCanvas);
-  }, [layout, useEditorStore.getState().layout?.width, useEditorStore.getState().layout?.height]); // Re-run on sidebar toggle
-
-
+  
   if (!layout) {
     return <div className="flex items-center justify-center h-full">Loading Canvas...</div>;
   }
@@ -51,7 +26,7 @@ export default function Canvas() {
   };
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center p-4">
+    <div className="p-8">
         <div
           id="canvas"
           className="relative shadow-lg bg-background"
@@ -59,8 +34,6 @@ export default function Canvas() {
             width: layout.width,
             height: layout.height,
             backgroundColor: layout.backgroundColor,
-            transform: `scale(${scale})`,
-            transformOrigin: 'center center',
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -86,7 +59,6 @@ export default function Canvas() {
                 e.stopPropagation();
                 selectWidget(widget.id);
               }}
-              scale={scale}
             >
               <div className="w-full h-full overflow-hidden relative">
                 <WidgetRenderer widget={widget} />

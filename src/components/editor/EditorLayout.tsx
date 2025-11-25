@@ -37,8 +37,8 @@ export default function EditorLayout() {
         {isLeftSidebarOpen && <LeftSidebar />}
         <div className="flex flex-1 flex-col min-w-0">
           <Header />
-          <main className="flex flex-1 overflow-hidden">
-            <div className="flex-1 relative bg-muted/40 flex flex-col">
+          <main className="flex flex-1 min-h-0">
+            <div className="flex-1 relative bg-muted/40 overflow-auto">
               <div className="absolute top-2 left-2 z-10">
                 <Tooltip>
                   <TooltipTrigger asChild>
