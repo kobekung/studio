@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Layout } from '@/lib/types';
@@ -13,6 +13,8 @@ interface PlayerProps {
 
 export default function Player({ layout }: PlayerProps) {
   const togglePreviewMode = useEditorStore(state => state.togglePreviewMode);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   const exitPreview = () => {
     togglePreviewMode();
@@ -27,11 +29,35 @@ export default function Player({ layout }: PlayerProps) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+  
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
+        });
+      }
+    };
+    
+    window.addEventListener('resize', updateSize);
+    updateSize(); 
+    
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
-  const aspectRatio = layout.width / layout.height;
+  const scale = useMemo(() => {
+    if (!layout || containerSize.width === 0 || containerSize.height === 0) {
+      return 1;
+    }
+    const scaleX = containerSize.width / layout.width;
+    const scaleY = containerSize.height / layout.height;
+    return Math.min(scaleX, scaleY);
+  }, [layout, containerSize]);
+
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black flex items-center justify-center z-50 p-4" ref={containerRef}>
       <Button
         variant="ghost"
         size="icon"
@@ -43,40 +69,32 @@ export default function Player({ layout }: PlayerProps) {
       </Button>
 
       <div
-        className="relative bg-white"
+        className="relative shadow-lg"
         style={{
-          width: '100vw',
-          height: `calc(100vw / ${aspectRatio})`,
-          maxHeight: '100vh',
-          maxWidth: `calc(100vh * ${aspectRatio})`,
+          width: layout.width,
+          height: layout.height,
           backgroundColor: layout.backgroundColor,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
         }}
       >
-        <div
-          className="absolute top-0 left-0"
-          style={{
-            width: layout.width,
-            height: layout.height,
-            transform: `scale(min(calc(100vw / ${layout.width}), calc(100vh / ${layout.height})))`,
-            transformOrigin: 'top left',
-          }}
-        >
-          {layout.widgets.map((widget) => (
-            <div
-              key={widget.id}
-              style={{
-                position: 'absolute',
-                left: widget.x,
-                top: widget.y,
-                width: widget.width,
-                height: widget.height,
-                zIndex: widget.zIndex,
-              }}
-            >
+        {layout.widgets.map((widget) => (
+          <div
+            key={widget.id}
+            style={{
+              position: 'absolute',
+              left: widget.x,
+              top: widget.y,
+              width: widget.width,
+              height: widget.height,
+              zIndex: widget.zIndex,
+            }}
+          >
+            <div className="w-full h-full overflow-hidden relative">
               <WidgetRenderer widget={widget} />
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
