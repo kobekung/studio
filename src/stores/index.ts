@@ -7,12 +7,18 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { mockLayout } from '@/lib/mock-data';
 import { createLayoutFromTemplate } from '@/lib/template-helpers';
 
+type ViewState = {
+  scale: number;
+  panX: number;
+  panY: number;
+};
+
 type EditorState = {
   layout: Layout | null;
   selectedWidgetId: string | null;
   isPreviewMode: boolean;
   isWidgetLoading: boolean;
-  zoom: number;
+  viewState: ViewState;
   
   // Actions
   loadLayout: (layout: Layout) => void;
@@ -20,13 +26,19 @@ type EditorState = {
   updateWidgetPosition: (payload: { id: string; x: number; y: number }) => void;
   updateWidgetSize: (payload: { id: string; width: number; height: number }) => void;
   updateWidgetProperties: (payload: { id: string; properties: any }) => void;
+  updateLayoutDimensions: (payload: { width: number; height: number }) => void;
   addWidget: (widget: Widget) => void;
   addNewWidget: (type: WidgetType) => Promise<void>;
   togglePreviewMode: () => void;
   setWidgetLoading: (isLoading: boolean) => void;
-  setZoom: (zoom: number) => void;
+  
+  // ViewState Actions
+  setViewState: (viewState: Partial<ViewState>) => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  fitToScreen: (viewportWidth: number, viewportHeight: number) => void;
+  resetView: (viewportWidth: number, viewportHeight: number) => void;
+
   applyTemplate: (template: TemplateType) => void;
 };
 
@@ -35,7 +47,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedWidgetId: null,
   isPreviewMode: false,
   isWidgetLoading: false,
-  zoom: 1,
+  viewState: {
+    scale: 1,
+    panX: 0,
+    panY: 0,
+  },
 
   loadLayout: (layout) => set({ layout }),
 
@@ -73,6 +89,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         widgets: state.layout.widgets.map((widget) =>
           widget.id === payload.id ? { ...widget, properties: payload.properties } : widget
         ),
+      },
+    };
+  }),
+  
+  updateLayoutDimensions: (payload) => set(state => {
+    if (!state.layout) return {};
+    return {
+      layout: {
+        ...state.layout,
+        width: payload.width,
+        height: payload.height,
       },
     };
   }),
@@ -157,11 +184,42 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   
   setWidgetLoading: (isLoading) => set({ isWidgetLoading: isLoading }),
   
-  setZoom: (zoom) => set({ zoom }),
+  setViewState: (newViewState) => set(state => ({
+    viewState: { ...state.viewState, ...newViewState },
+  })),
 
-  zoomIn: () => set(state => ({ zoom: state.zoom + 0.1 })),
+  zoomIn: () => set(state => ({
+    viewState: { ...state.viewState, scale: state.viewState.scale + 0.1 },
+  })),
 
-  zoomOut: () => set(state => ({ zoom: Math.max(0.1, state.zoom - 0.1) })),
+  zoomOut: () => set(state => ({
+    viewState: { ...state.viewState, scale: Math.max(0.1, state.viewState.scale - 0.1) },
+  })),
+
+  fitToScreen: (viewportWidth, viewportHeight) => {
+    const layout = get().layout;
+    if (!layout) return;
+
+    const padding = 50;
+    const scaleX = (viewportWidth - padding * 2) / layout.width;
+    const scaleY = (viewportHeight - padding * 2) / layout.height;
+    const scale = Math.min(scaleX, scaleY);
+    
+    const panX = (viewportWidth - layout.width * scale) / 2;
+    const panY = (viewportHeight - layout.height * scale) / 2;
+
+    set({ viewState: { scale, panX, panY } });
+  },
+
+  resetView: (viewportWidth, viewportHeight) => {
+    const layout = get().layout;
+    if (!layout) return;
+
+    const scale = 1;
+    const panX = (viewportWidth - layout.width * scale) / 2;
+    const panY = (viewportHeight - layout.height * scale) / 2;
+    set({ viewState: { scale, panX, panY } });
+  },
   
   applyTemplate: (template) => set(state => {
     if (!state.layout) return {};

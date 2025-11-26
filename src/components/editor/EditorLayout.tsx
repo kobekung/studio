@@ -5,43 +5,40 @@ import LeftSidebar from './LeftSidebar';
 import RightSidebar from './RightSidebar';
 import Canvas from './Canvas';
 import Player from '@/components/player/Player';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, MouseEvent } from 'react';
 import { mockLayout } from '@/lib/mock-data';
 import { PanelLeftClose, PanelRightClose, PanelLeft, PanelRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ZoomControls from './ZoomControls';
-import { Layout } from '@/lib/types';
 import TemplateSelectionModal from './TemplateSelectionModal';
 
-// Moved outside to prevent re-creation on every render
-const calculateFitToScreenZoom = (
-  layout: Layout | null,
-  containerSize: { width: number; height: number }
-) => {
-  if (!layout || containerSize.width === 0 || containerSize.height === 0) {
-    return 1;
-  }
-  const scaleX = containerSize.width / layout.width;
-  const scaleY = containerSize.height / layout.height;
-  return Math.min(scaleX, scaleY) * 0.9;
-};
-
 export default function EditorLayout() {
-  const { isPreviewMode, layout, loadLayout, setZoom, applyTemplate } = useEditorStore(state => ({
+  const { 
+    isPreviewMode, 
+    layout, 
+    loadLayout, 
+    applyTemplate,
+    viewState,
+    setViewState,
+    fitToScreen
+  } = useEditorStore(state => ({
     isPreviewMode: state.isPreviewMode,
     layout: state.layout,
     loadLayout: state.loadLayout,
-    setZoom: state.setZoom,
     applyTemplate: state.applyTemplate,
+    viewState: state.viewState,
+    setViewState: state.setViewState,
+    fitToScreen: state.fitToScreen,
   }));
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const [canvasContainerSize, setCanvasContainerSize] = useState({ width: 0, height: 0 });
   
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const isPanning = useRef(false);
+
   useEffect(() => {
     if (!layout) {
       loadLayout(mockLayout);
@@ -55,37 +52,56 @@ export default function EditorLayout() {
   }, [layout]);
   
   useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container) return;
+
     const handleResize = () => {
       if (canvasContainerRef.current) {
         const { width, height } = canvasContainerRef.current.getBoundingClientRect();
-        setCanvasContainerSize({ width, height });
+        fitToScreen(width, height);
       }
     };
-
+    
     const resizeObserver = new ResizeObserver(handleResize);
-    const container = canvasContainerRef.current;
-    if (container) {
-      resizeObserver.observe(container);
-      handleResize();
+    resizeObserver.observe(container);
+    handleResize(); // Initial fit
+
+    return () => resizeObserver.unobserve(container);
+  }, [layout, fitToScreen]);
+
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    // Pan on right-click or space+left-click
+    if (e.button === 2 || (e.button === 0 && e.nativeEvent.spaceKey)) {
+      e.preventDefault();
+      isPanning.current = true;
+      e.currentTarget.style.cursor = 'grabbing';
     }
+  };
 
-    return () => {
-      if (container) {
-        resizeObserver.unobserve(container);
-      }
-    };
-  }, []);
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (isPanning.current) {
+      setViewState({
+        panX: viewState.panX + e.movementX,
+        panY: viewState.panY + e.movementY,
+      });
+    }
+  };
 
-  useEffect(() => {
-    const newZoom = calculateFitToScreenZoom(layout, canvasContainerSize);
-    setZoom(newZoom);
-  }, [layout, canvasContainerSize, setZoom]);
+  const handleMouseUp = (e: MouseEvent<HTMLDivElement>) => {
+    if (isPanning.current) {
+      isPanning.current = false;
+      e.currentTarget.style.cursor = 'grab';
+    }
+  };
+  
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      const newScale = viewState.scale - e.deltaY * 0.001;
+      setViewState({ scale: Math.max(0.1, newScale) });
+    }
+  };
 
-
-  const fitToScreen = useCallback(() => {
-    const newZoom = calculateFitToScreenZoom(layout, canvasContainerSize);
-    setZoom(newZoom);
-  }, [layout, canvasContainerSize, setZoom]);
 
   const handleTemplateSelect = (template: any) => {
     applyTemplate(template);
@@ -103,7 +119,16 @@ export default function EditorLayout() {
         <div className="flex flex-1 flex-col min-w-0">
           <Header />
           <main className="flex flex-1 min-h-0">
-            <div ref={canvasContainerRef} className="flex-1 relative bg-muted/40 overflow-auto">
+            <div 
+              ref={canvasContainerRef}
+              className="flex-1 relative bg-muted/40 overflow-hidden cursor-grab"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onContextMenu={(e) => e.preventDefault()}
+              onWheel={handleWheel}
+            >
               <div className="absolute top-2 left-2 z-10">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -116,7 +141,7 @@ export default function EditorLayout() {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <Canvas containerSize={canvasContainerSize} />
+              <Canvas />
                <div className="absolute top-2 right-2 z-10">
                  <Tooltip>
                   <TooltipTrigger asChild>
@@ -129,7 +154,7 @@ export default function EditorLayout() {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <ZoomControls onFitToScreen={fitToScreen}/>
+              <ZoomControls />
             </div>
             {isRightSidebarOpen && <RightSidebar />}
           </main>

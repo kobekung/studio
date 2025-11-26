@@ -3,25 +3,10 @@ import { Rnd } from 'react-rnd';
 import { useEditorStore } from '@/stores';
 import WidgetRenderer from '@/components/widgets/WidgetRenderer';
 import { cn } from '@/lib/utils';
-import React, { useEffect } from 'react';
+import React from 'react';
 
-interface CanvasProps {
-  containerSize: {
-    width: number;
-    height: number;
-  };
-}
-
-export default function Canvas({ containerSize }: CanvasProps) {
-  const { layout, selectedWidgetId, selectWidget, updateWidgetPosition, updateWidgetSize, zoom, setZoom } = useEditorStore();
-  
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (e.ctrlKey) {
-      e.preventDefault();
-      const newZoom = zoom - e.deltaY * 0.001;
-      setZoom(Math.max(0.1, newZoom));
-    }
-  };
+export default function Canvas() {
+  const { layout, selectedWidgetId, selectWidget, updateWidgetPosition, updateWidgetSize, viewState } = useEditorStore();
 
   if (!layout) {
     return <div className="flex items-center justify-center h-full">Loading Canvas...</div>;
@@ -41,58 +26,54 @@ export default function Canvas({ containerSize }: CanvasProps) {
   };
 
   return (
-    <div 
-      className="w-full h-full flex items-center justify-center p-8 overflow-auto"
-      onWheel={handleWheel}
+    <div
+      id="canvas-parent"
+      className="absolute"
+      style={{
+        transform: `translate(${viewState.panX}px, ${viewState.panY}px) scale(${viewState.scale})`,
+        transformOrigin: 'top left',
+      }}
     >
-        <div
-          id="canvas-parent"
-          style={{
-            transform: `scale(${zoom})`,
-            transformOrigin: 'center center',
-          }}
-        >
-            <div
-              id="canvas"
-              className="relative shadow-lg bg-background"
-              style={{
-                width: layout.width,
-                height: layout.height,
-                backgroundColor: layout.backgroundColor,
-              }}
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  selectWidget(null);
-                }
-              }}
-            >
-              {layout.widgets.map((widget) => (
-                <Rnd
-                  key={widget.id}
-                  size={{ width: widget.width, height: widget.height }}
-                  position={{ x: widget.x, y: widget.y }}
-                  onDragStop={(_e, d) => handleDragStop(widget.id, d)}
-                  onResizeStop={(_e, _direction, ref, _delta, position) => {
-                    handleResizeStop(widget.id, ref, position)
-                  }}
-                  bounds="parent"
-                  className={cn(
-                    'group focus:outline-none',
-                    selectedWidgetId === widget.id ? 'ring-2 ring-primary ring-offset-2 z-20' : `z-${widget.zIndex}`
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    selectWidget(widget.id);
-                  }}
-                  scale={zoom}
-                >
-                  <div className="w-full h-full overflow-hidden relative">
-                    <WidgetRenderer widget={widget} />
-                  </div>
-                </Rnd>
-              ))}
+      <div
+        id="canvas"
+        className="relative shadow-lg bg-background"
+        style={{
+          width: layout.width,
+          height: layout.height,
+          backgroundColor: layout.backgroundColor,
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            selectWidget(null);
+          }
+        }}
+      >
+        {layout.widgets.map((widget) => (
+          <Rnd
+            key={widget.id}
+            size={{ width: widget.width, height: widget.height }}
+            position={{ x: widget.x, y: widget.y }}
+            onDragStop={(_e, d) => handleDragStop(widget.id, d)}
+            onResizeStop={(_e, _direction, ref, _delta, position) => {
+              handleResizeStop(widget.id, ref, position)
+            }}
+            bounds="parent"
+            className={cn(
+              'group focus:outline-none',
+              selectedWidgetId === widget.id ? 'ring-2 ring-primary ring-offset-2 z-20' : `z-${widget.zIndex}`
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              selectWidget(widget.id);
+            }}
+            scale={viewState.scale}
+          >
+            <div className="w-full h-full overflow-hidden relative">
+              <WidgetRenderer widget={widget} />
             </div>
-        </div>
+          </Rnd>
+        ))}
+      </div>
     </div>
   );
 }
