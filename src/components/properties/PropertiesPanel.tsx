@@ -5,6 +5,7 @@ import TextProperties from './TextProperties';
 import ImageProperties from './ImageProperties';
 import ClockProperties from './ClockProperties';
 import TickerProperties from './TickerProperties';
+import WebviewProperties from './WebviewProperties';
 import { Separator } from '../ui/separator';
 
 interface PropertiesPanelProps {
@@ -22,6 +23,8 @@ export default function PropertiesPanel({ widget }: PropertiesPanelProps) {
         return <ClockProperties widget={widget} />;
       case 'ticker':
         return <TickerProperties widget={widget} />;
+      case 'webview':
+        return <WebviewProperties widget={widget} />;
       default:
         return null;
     }

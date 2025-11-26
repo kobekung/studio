@@ -5,6 +5,7 @@ import TextWidget from './TextWidget';
 import ClockWidget from './ClockWidget';
 import MediaPlaylistWidget from './ImageWidget';
 import TickerWidget from './TickerWidget';
+import WebviewWidget from './WebviewWidget';
 
 interface WidgetRendererProps {
   widget: Widget<any>;
@@ -21,6 +22,8 @@ export default function WidgetRenderer({ widget }: WidgetRendererProps) {
       return <MediaPlaylistWidget properties={widget.properties} />;
     case 'ticker':
       return <TickerWidget properties={widget.properties} />;
+    case 'webview':
+        return <WebviewWidget properties={widget.properties} />;
     default:
       return (
         <div className="w-full h-full bg-red-200 flex items-center justify-center">

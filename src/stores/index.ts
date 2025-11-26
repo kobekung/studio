@@ -1,10 +1,11 @@
 'use client';
 
 import create from 'zustand';
-import { Layout, Widget, WidgetType } from '@/lib/types';
+import { Layout, Widget, WidgetType, TemplateType } from '@/lib/types';
 import { getWidgetDefaults } from '@/app/actions';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { mockLayout } from '@/lib/mock-data';
+import { createLayoutFromTemplate } from '@/lib/template-helpers';
 
 type EditorState = {
   layout: Layout | null;
@@ -26,6 +27,7 @@ type EditorState = {
   setZoom: (zoom: number) => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  applyTemplate: (template: TemplateType) => void;
 };
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -97,7 +99,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         x: 100,
         y: 100,
         width: 400,
-        height: (type === 'ticker') ? 100 : 200,
+        height: (type === 'ticker' || type === 'webview') ? 300 : 200,
         zIndex: (state.layout?.widgets.length || 0) + 1,
         properties: { ...properties },
       };
@@ -128,6 +130,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         }
       }
 
+      if (type === 'webview') {
+        newWidget.width = 600;
+        newWidget.height = 400;
+      }
+
       set(state => ({
         layout: state.layout ? {
           ...state.layout,
@@ -155,6 +162,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   zoomIn: () => set(state => ({ zoom: state.zoom + 0.1 })),
 
   zoomOut: () => set(state => ({ zoom: Math.max(0.1, state.zoom - 0.1) })),
+  
+  applyTemplate: (template) => set(state => {
+    if (!state.layout) return {};
+    const newLayout = createLayoutFromTemplate(state.layout, template);
+    return { layout: newLayout };
+  }),
 }));
 
 // Initialize the store with mock data

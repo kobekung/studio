@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SuggestWidgetDefaultsInputSchema = z.object({
-  widgetType: z.enum(['text', 'clock', 'image', 'ticker']).describe('The type of the widget.'),
+  widgetType: z.enum(['text', 'clock', 'image', 'ticker', 'webview']).describe('The type of the widget.'),
 });
 export type SuggestWidgetDefaultsInput = z.infer<typeof SuggestWidgetDefaultsInputSchema>;
 

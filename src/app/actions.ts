@@ -39,6 +39,9 @@ export async function getWidgetDefaults(widgetType: SuggestWidgetDefaultsInput['
             fontSize: 48,
         }
     }
+    if (widgetType === 'webview') {
+        return { url: 'https://www.google.com' };
+    }
     return {};
   }
 }

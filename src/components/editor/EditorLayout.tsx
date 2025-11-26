@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ZoomControls from './ZoomControls';
 import { Layout } from '@/lib/types';
+import TemplateSelectionModal from './TemplateSelectionModal';
 
 // Moved outside to prevent re-creation on every render
 const calculateFitToScreenZoom = (
@@ -27,15 +28,17 @@ const calculateFitToScreenZoom = (
 };
 
 export default function EditorLayout() {
-  const { isPreviewMode, layout, loadLayout, setZoom } = useEditorStore(state => ({
+  const { isPreviewMode, layout, loadLayout, setZoom, applyTemplate } = useEditorStore(state => ({
     isPreviewMode: state.isPreviewMode,
     layout: state.layout,
     loadLayout: state.loadLayout,
     setZoom: state.setZoom,
+    applyTemplate: state.applyTemplate,
   }));
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [canvasContainerSize, setCanvasContainerSize] = useState({ width: 0, height: 0 });
   
@@ -44,6 +47,12 @@ export default function EditorLayout() {
       loadLayout(mockLayout);
     }
   }, [layout, loadLayout]);
+
+  useEffect(() => {
+    if (layout && layout.widgets.length === 0) {
+      setIsTemplateModalOpen(true);
+    }
+  }, [layout]);
   
   useEffect(() => {
     const handleResize = () => {
@@ -78,6 +87,11 @@ export default function EditorLayout() {
     setZoom(newZoom);
   }, [layout, canvasContainerSize, setZoom]);
 
+  const handleTemplateSelect = (template: any) => {
+    applyTemplate(template);
+    setIsTemplateModalOpen(false);
+  };
+
   if (isPreviewMode && layout) {
     return <Player layout={layout} />;
   }
@@ -89,7 +103,7 @@ export default function EditorLayout() {
         <div className="flex flex-1 flex-col min-w-0">
           <Header />
           <main className="flex flex-1 min-h-0">
-            <div ref={canvasContainerRef} className="flex-1 relative bg-muted/40 overflow-hidden">
+            <div ref={canvasContainerRef} className="flex-1 relative bg-muted/40 overflow-auto">
               <div className="absolute top-2 left-2 z-10">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -120,6 +134,10 @@ export default function EditorLayout() {
             {isRightSidebarOpen && <RightSidebar />}
           </main>
         </div>
+        <TemplateSelectionModal
+          isOpen={isTemplateModalOpen}
+          onSelect={handleTemplateSelect}
+        />
       </div>
     </TooltipProvider>
   );

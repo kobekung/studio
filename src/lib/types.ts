@@ -1,4 +1,4 @@
-export type WidgetType = 'text' | 'clock' | 'image' | 'video' | 'ticker';
+export type WidgetType = 'text' | 'clock' | 'image' | 'video' | 'ticker' | 'webview';
 
 export interface PlaylistItem {
   id: string;
@@ -34,7 +34,11 @@ export interface TickerWidgetProperties {
   fontSize: number;
 }
 
-export type WidgetProperties = TextWidgetProperties | ImageWidgetProperties | ClockWidgetProperties | TickerWidgetProperties;
+export interface WebviewWidgetProperties {
+    url: string;
+}
+
+export type WidgetProperties = TextWidgetProperties | ImageWidgetProperties | ClockWidgetProperties | TickerWidgetProperties | WebviewWidgetProperties;
 
 export interface Widget<T extends WidgetProperties = WidgetProperties> {
   id: string;
@@ -55,3 +59,5 @@ export interface Layout {
   backgroundColor: string;
   widgets: Widget<any>[];
 }
+
+export type TemplateType = 'blank' | 'split-horizontal' | 'split-vertical' | 'sidebar-left' | 'quad-grid';
