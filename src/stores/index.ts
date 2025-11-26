@@ -18,6 +18,8 @@ type EditorState = {
   selectedWidgetId: string | null;
   isPreviewMode: boolean;
   isWidgetLoading: boolean;
+
+  // New state for panning and zooming
   viewState: ViewState;
   
   // Actions
@@ -29,6 +31,7 @@ type EditorState = {
   updateLayoutDimensions: (payload: { width: number; height: number }) => void;
   addWidget: (widget: Widget) => void;
   addNewWidget: (type: WidgetType) => Promise<void>;
+  deleteWidget: (widgetId: string) => void;
   togglePreviewMode: () => void;
   setWidgetLoading: (isLoading: boolean) => void;
   
@@ -113,6 +116,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       },
     };
   }),
+  
+  deleteWidget: (widgetId) => set(state => {
+    if (!state.layout) return {};
+    return {
+      layout: {
+        ...state.layout,
+        widgets: state.layout.widgets.filter(w => w.id !== widgetId),
+      },
+      selectedWidgetId: state.selectedWidgetId === widgetId ? null : state.selectedWidgetId,
+    };
+  }),
 
   addNewWidget: async (type: WidgetType) => {
     set({ isWidgetLoading: true });
@@ -125,8 +139,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         type,
         x: 100,
         y: 100,
-        width: 400,
-        height: (type === 'ticker' || type === 'webview') ? 300 : 200,
+        width: (type === 'webview') ? 600 : 400,
+        height: (type === 'webview') ? 400 : ((type === 'ticker') ? 100 : 200),
         zIndex: (state.layout?.widgets.length || 0) + 1,
         properties: { ...properties },
       };
@@ -155,11 +169,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 fontSize: 48,
             }
         }
-      }
-
-      if (type === 'webview') {
-        newWidget.width = 600;
-        newWidget.height = 400;
       }
 
       set(state => ({
@@ -222,11 +231,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   
   applyTemplate: (template) => set(state => {
-    if (!state.layout) return {};
+    if (!state.layout) {
+        // If layout is null, create a new one from mockLayout and then apply template
+        const newLayoutWithTemplate = createLayoutFromTemplate(mockLayout, template);
+        return { layout: newLayoutWithTemplate };
+    }
     const newLayout = createLayoutFromTemplate(state.layout, template);
-    return { layout: newLayout };
+    return { layout: newLayout, selectedWidgetId: null };
   }),
 }));
 
 // Initialize the store with mock data
 useEditorStore.getState().loadLayout(mockLayout);
+
+    

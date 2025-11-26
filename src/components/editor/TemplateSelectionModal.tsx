@@ -14,6 +14,7 @@ import { TemplateType } from '@/lib/types';
 interface TemplateSelectionModalProps {
   isOpen: boolean;
   onSelect: (template: TemplateType) => void;
+  onClose: () => void;
 }
 
 const templates = [
@@ -44,9 +45,9 @@ const templates = [
   },
 ];
 
-export default function TemplateSelectionModal({ isOpen, onSelect }: TemplateSelectionModalProps) {
+export default function TemplateSelectionModal({ isOpen, onSelect, onClose }: TemplateSelectionModalProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[650px]">
         <DialogHeader>
           <DialogTitle>Choose a Layout Template</DialogTitle>
@@ -72,3 +73,5 @@ export default function TemplateSelectionModal({ isOpen, onSelect }: TemplateSel
     </Dialog>
   );
 }
+
+    

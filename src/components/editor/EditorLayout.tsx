@@ -21,7 +21,9 @@ export default function EditorLayout() {
     applyTemplate,
     viewState,
     setViewState,
-    fitToScreen
+    fitToScreen,
+    deleteWidget,
+    selectedWidgetId,
   } = useEditorStore(state => ({
     isPreviewMode: state.isPreviewMode,
     layout: state.layout,
@@ -30,6 +32,8 @@ export default function EditorLayout() {
     viewState: state.viewState,
     setViewState: state.setViewState,
     fitToScreen: state.fitToScreen,
+    deleteWidget: state.deleteWidget,
+    selectedWidgetId: state.selectedWidgetId,
   }));
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
@@ -69,9 +73,23 @@ export default function EditorLayout() {
     return () => resizeObserver.unobserve(container);
   }, [layout, fitToScreen]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedWidgetId) {
+        e.preventDefault();
+        deleteWidget(selectedWidgetId);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedWidgetId, deleteWidget]);
+
+
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     // Pan on right-click or space+left-click
-    if (e.button === 2 || (e.button === 0 && e.nativeEvent.spaceKey)) {
+    if (e.button === 2 || (e.button === 0 && e.nativeEvent.altKey)) {
       e.preventDefault();
       isPanning.current = true;
       e.currentTarget.style.cursor = 'grabbing';
@@ -94,13 +112,23 @@ export default function EditorLayout() {
     }
   };
   
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     if (e.ctrlKey) {
       e.preventDefault();
       const newScale = viewState.scale - e.deltaY * 0.001;
       setViewState({ scale: Math.max(0.1, newScale) });
     }
-  };
+  }, [viewState.scale, setViewState]);
+
+  useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container) return;
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleWheel]);
 
 
   const handleTemplateSelect = (template: any) => {
@@ -127,7 +155,6 @@ export default function EditorLayout() {
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
               onContextMenu={(e) => e.preventDefault()}
-              onWheel={handleWheel}
             >
               <div className="absolute top-2 left-2 z-10">
                 <Tooltip>
@@ -162,8 +189,11 @@ export default function EditorLayout() {
         <TemplateSelectionModal
           isOpen={isTemplateModalOpen}
           onSelect={handleTemplateSelect}
+          onClose={() => setIsTemplateModalOpen(false)}
         />
       </div>
     </TooltipProvider>
   );
 }
+
+    
