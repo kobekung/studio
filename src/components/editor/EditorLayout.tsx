@@ -11,6 +11,20 @@ import { PanelLeftClose, PanelRightClose, PanelLeft, PanelRight } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ZoomControls from './ZoomControls';
+import { Layout } from '@/lib/types';
+
+// Moved outside to prevent re-creation on every render
+const calculateFitToScreenZoom = (
+  layout: Layout | null,
+  containerSize: { width: number; height: number }
+) => {
+  if (!layout || containerSize.width === 0 || containerSize.height === 0) {
+    return 1;
+  }
+  const scaleX = containerSize.width / layout.width;
+  const scaleY = containerSize.height / layout.height;
+  return Math.min(scaleX, scaleY) * 0.9;
+};
 
 export default function EditorLayout() {
   const { isPreviewMode, layout, loadLayout, setZoom } = useEditorStore(state => ({
@@ -25,30 +39,17 @@ export default function EditorLayout() {
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [canvasContainerSize, setCanvasContainerSize] = useState({ width: 0, height: 0 });
   
-  // Load initial layout into the store
   useEffect(() => {
     if (!layout) {
       loadLayout(mockLayout);
     }
   }, [layout, loadLayout]);
-
-  const calculateFitToScreenZoom = useCallback(() => {
-    if (!layout || canvasContainerSize.width === 0 || canvasContainerSize.height === 0) {
-      return 1;
-    }
-    const scaleX = canvasContainerSize.width / layout.width;
-    const scaleY = canvasContainerSize.height / layout.height;
-    return Math.min(scaleX, scaleY) * 0.9;
-  }, [layout, canvasContainerSize]);
-
+  
   useEffect(() => {
     const handleResize = () => {
       if (canvasContainerRef.current) {
         const { width, height } = canvasContainerRef.current.getBoundingClientRect();
         setCanvasContainerSize({ width, height });
-        // Recalculate and set fit-to-screen zoom on resize
-        const newZoom = calculateFitToScreenZoom();
-        setZoom(newZoom);
       }
     };
 
@@ -56,7 +57,7 @@ export default function EditorLayout() {
     const container = canvasContainerRef.current;
     if (container) {
       resizeObserver.observe(container);
-      handleResize(); // Initial calculation
+      handleResize();
     }
 
     return () => {
@@ -64,12 +65,18 @@ export default function EditorLayout() {
         resizeObserver.unobserve(container);
       }
     };
-  }, [calculateFitToScreenZoom, setZoom]);
+  }, []);
 
-  const fitToScreen = () => {
-    const newZoom = calculateFitToScreenZoom();
+  useEffect(() => {
+    const newZoom = calculateFitToScreenZoom(layout, canvasContainerSize);
     setZoom(newZoom);
-  }
+  }, [layout, canvasContainerSize, setZoom]);
+
+
+  const fitToScreen = useCallback(() => {
+    const newZoom = calculateFitToScreenZoom(layout, canvasContainerSize);
+    setZoom(newZoom);
+  }, [layout, canvasContainerSize, setZoom]);
 
   if (isPreviewMode && layout) {
     return <Player layout={layout} />;
