@@ -3,7 +3,7 @@ import { Rnd } from 'react-rnd';
 import { useEditorStore } from '@/stores';
 import WidgetRenderer from '@/components/widgets/WidgetRenderer';
 import { cn } from '@/lib/utils';
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect } from 'react';
 
 interface CanvasProps {
   containerSize: {
@@ -13,17 +13,15 @@ interface CanvasProps {
 }
 
 export default function Canvas({ containerSize }: CanvasProps) {
-  const { layout, selectedWidgetId, selectWidget, updateWidgetPosition, updateWidgetSize } = useEditorStore();
+  const { layout, selectedWidgetId, selectWidget, updateWidgetPosition, updateWidgetSize, zoom, setZoom } = useEditorStore();
   
-  const scale = useMemo(() => {
-    if (!layout || containerSize.width === 0 || containerSize.height === 0) {
-      return 1;
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      const newZoom = zoom - e.deltaY * 0.001;
+      setZoom(Math.max(0.1, newZoom));
     }
-    const scaleX = containerSize.width / layout.width;
-    const scaleY = containerSize.height / layout.height;
-    // 0.9 provides some padding
-    return Math.min(scaleX, scaleY) * 0.9; 
-  }, [layout, containerSize]);
+  };
 
   if (!layout) {
     return <div className="flex items-center justify-center h-full">Loading Canvas...</div>;
@@ -43,11 +41,14 @@ export default function Canvas({ containerSize }: CanvasProps) {
   };
 
   return (
-    <div className="w-full h-full flex items-center justify-center p-8 overflow-auto">
+    <div 
+      className="w-full h-full flex items-center justify-center p-8 overflow-auto"
+      onWheel={handleWheel}
+    >
         <div
           id="canvas-parent"
           style={{
-            transform: `scale(${scale})`,
+            transform: `scale(${zoom})`,
             transformOrigin: 'center center',
           }}
         >
@@ -83,6 +84,7 @@ export default function Canvas({ containerSize }: CanvasProps) {
                     e.stopPropagation();
                     selectWidget(widget.id);
                   }}
+                  scale={zoom}
                 >
                   <div className="w-full h-full overflow-hidden relative">
                     <WidgetRenderer widget={widget} />

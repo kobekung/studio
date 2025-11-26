@@ -11,6 +11,7 @@ type EditorState = {
   selectedWidgetId: string | null;
   isPreviewMode: boolean;
   isWidgetLoading: boolean;
+  zoom: number;
   
   // Actions
   loadLayout: (layout: Layout) => void;
@@ -22,6 +23,9 @@ type EditorState = {
   addNewWidget: (type: WidgetType) => Promise<void>;
   togglePreviewMode: () => void;
   setWidgetLoading: (isLoading: boolean) => void;
+  setZoom: (zoom: number) => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
 };
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -29,6 +33,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedWidgetId: null,
   isPreviewMode: false,
   isWidgetLoading: false,
+  zoom: 1,
 
   loadLayout: (layout) => set({ layout }),
 
@@ -144,6 +149,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   })),
   
   setWidgetLoading: (isLoading) => set({ isWidgetLoading: isLoading }),
+  
+  setZoom: (zoom) => set({ zoom }),
+
+  zoomIn: () => set(state => ({ zoom: state.zoom + 0.1 })),
+
+  zoomOut: () => set(state => ({ zoom: Math.max(0.1, state.zoom - 0.1) })),
 }));
 
 // Initialize the store with mock data

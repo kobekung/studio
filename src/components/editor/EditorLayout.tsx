@@ -5,16 +5,20 @@ import LeftSidebar from './LeftSidebar';
 import RightSidebar from './RightSidebar';
 import Canvas from './Canvas';
 import Player from '@/components/player/Player';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { mockLayout } from '@/lib/mock-data';
 import { PanelLeftClose, PanelRightClose, PanelLeft, PanelRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ZoomControls from './ZoomControls';
 
 export default function EditorLayout() {
-  const isPreviewMode = useEditorStore(state => state.isPreviewMode);
-  const layout = useEditorStore(state => state.layout);
-  const loadLayout = useEditorStore(state => state.loadLayout);
+  const { isPreviewMode, layout, loadLayout, setZoom } = useEditorStore(state => ({
+    isPreviewMode: state.isPreviewMode,
+    layout: state.layout,
+    loadLayout: state.loadLayout,
+    setZoom: state.setZoom,
+  }));
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
@@ -28,25 +32,44 @@ export default function EditorLayout() {
     }
   }, [layout, loadLayout]);
 
-  useEffect(() => {
-    const resizeObserver = new ResizeObserver(entries => {
-      if (entries[0]) {
-        const { width, height } = entries[0].contentRect;
-        setCanvasContainerSize({ width, height });
-      }
-    });
+  const calculateFitToScreenZoom = useCallback(() => {
+    if (!layout || canvasContainerSize.width === 0 || canvasContainerSize.height === 0) {
+      return 1;
+    }
+    const scaleX = canvasContainerSize.width / layout.width;
+    const scaleY = canvasContainerSize.height / layout.height;
+    return Math.min(scaleX, scaleY) * 0.9;
+  }, [layout, canvasContainerSize]);
 
-    if (canvasContainerRef.current) {
-      resizeObserver.observe(canvasContainerRef.current);
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasContainerRef.current) {
+        const { width, height } = canvasContainerRef.current.getBoundingClientRect();
+        setCanvasContainerSize({ width, height });
+        // Recalculate and set fit-to-screen zoom on resize
+        const newZoom = calculateFitToScreenZoom();
+        setZoom(newZoom);
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(handleResize);
+    const container = canvasContainerRef.current;
+    if (container) {
+      resizeObserver.observe(container);
+      handleResize(); // Initial calculation
     }
 
     return () => {
-      if (canvasContainerRef.current) {
-        resizeObserver.unobserve(canvasContainerRef.current);
+      if (container) {
+        resizeObserver.unobserve(container);
       }
     };
-  }, []);
+  }, [calculateFitToScreenZoom, setZoom]);
 
+  const fitToScreen = () => {
+    const newZoom = calculateFitToScreenZoom();
+    setZoom(newZoom);
+  }
 
   if (isPreviewMode && layout) {
     return <Player layout={layout} />;
@@ -59,7 +82,7 @@ export default function EditorLayout() {
         <div className="flex flex-1 flex-col min-w-0">
           <Header />
           <main className="flex flex-1 min-h-0">
-            <div ref={canvasContainerRef} className="flex-1 relative bg-muted/40 overflow-auto">
+            <div ref={canvasContainerRef} className="flex-1 relative bg-muted/40 overflow-hidden">
               <div className="absolute top-2 left-2 z-10">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -85,6 +108,7 @@ export default function EditorLayout() {
                   </TooltipContent>
                 </Tooltip>
               </div>
+              <ZoomControls onFitToScreen={fitToScreen}/>
             </div>
             {isRightSidebarOpen && <RightSidebar />}
           </main>
